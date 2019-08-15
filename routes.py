@@ -25,9 +25,11 @@ def index():
     description = sensor['description']
     lng, lat = sensor['Locations'][0]['location']['coordinates']
 
-    # elevation_navd88 = -10
-    # if 'elevationNAVD88' in sensor['properties']:
-    #   elevation_navd88 = sensor['properties']['elevationNAVD88']
+    elevation_navd88 = 0
+    if 'elevationNAVD88' in sensor['properties']:
+      elevation_navd88 = float(sensor['properties']['elevationNAVD88'])
+    else:
+      continue
     
     measurements = []
     for datastream in sensor['Datastreams']:
@@ -35,17 +37,18 @@ def index():
         for observation in datastream['Observations']:
           date = observation['phenomenonTime'] # iso 8601 utc
           # print utc, dateutil.parser.parse(utc)
-          value = observation['result']
+          value = observation['result'] + (elevation_navd88*3.28)
 
           measurement = {
             'date': date,
-            'value': value,
-
-            # TODO
-            'confidenceInterval': 0.5,
-            'unit': 'ft',
-            'datum': 'NAVD 88',
-            'riskRating': 'Normal',
+            'values': {
+              'navd88': {
+                'value': value,
+                'unit': 'ft',
+                'riskRating': 'Normal',
+                'confidenceInterval': 0.5,
+              }
+            }
           }
           measurements.append(measurement)
 
@@ -68,4 +71,4 @@ def index():
   
 
 if __name__ == "__main__":
-  app.run(debug=True, port=5001)
+  app.run(debug=True, port=5000)
