@@ -1,4 +1,4 @@
-runtime: python37
+runtime: python27
 api_version: 1
 threadsafe: true
 
@@ -8,6 +8,6 @@ libraries:
 
 handlers:
 - url: /.*
-  script: routes.py
+  script: routes.app
 
 service: backend
