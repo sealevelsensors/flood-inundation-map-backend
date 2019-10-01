@@ -3,3 +3,4 @@ Flask-Cors==3.0.8
 requests==2.22.0
 requests-toolbelt==0.9.1
 Werkzeug<0.13.0,>=0.12.0
+python-dateutil==2.8.0
