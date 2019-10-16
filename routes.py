@@ -73,16 +73,15 @@ def sensors():
                           key=lambda m: dateutil.parser.isoparse(m['date']),
                           reverse=False)
 
-    if measurements:
-      d = {
-          'id': _id,
-          'name': name,
-          'description': description,
-          'lng': lng,
-          'lat': lat,
-          'measurements': measurements,
-      }
-      ret.append(d)
+    d = {
+        'id': _id,
+        'name': name,
+        'description': description,
+        'lng': lng,
+        'lat': lat,
+        'measurements': measurements,
+    }
+    ret.append(d)
 
   return jsonify(ret)
 
