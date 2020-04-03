@@ -1,13 +1,5 @@
-runtime: python27
-api_version: 1
-threadsafe: true
-
-libraries:
-- name: ssl
-  version: latest
-
-handlers:
-- url: /.*
-  script: routes.app
-
+runtime: python37
+entrypoint: gunicorn -t 300 -b :$PORT main:app
+env_variables:
+  BUCKET_NAME: "perceptive-bay-214919-bucket"
 service: backend

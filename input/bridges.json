@@ -1,0 +1,167 @@
+[
+  {
+    "id": 1,
+    "gdot_id": "051-0145-0",
+    "name": "Shipyard Road over Shipyard creek",
+    "gdot_name": "SHIPYARD ROAD at SHIPYARD CREEK, 4 MI S OF SAVANNAH",
+    "description": "Lowest support",
+    "lat": 31.936685,
+    "lng": -81.102928,
+    "elevation": {
+      "elevation": 6.17796,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 62
+  },
+  {
+    "id": 2,
+    "gdot_id": "051-5008-0",
+    "name": "Sullivan Drive over tidal canal",
+    "gdot_name": "SULLIVAN ROAD at MERCER INLET, 2.5 MI SE OF VERNONBURG",
+    "description": "Lowest support",
+    "lat": 31.930439,
+    "lng": -81.092435,
+    "elevation": {
+      "elevation": 7.86452,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 64
+  },
+  {
+    "id": 3,
+    "gdot_id": "051-5091-0",
+    "name": "Hunt Drive over tidal canal",
+    "gdot_name": "CR 113 at MOON RIVER TRIB, 3 MI SE OF VERNONBURG",
+    "description": "Lowest support",
+    "lat": 31.928811,
+    "lng": -81.086168,
+    "elevation": {
+      "elevation": 6.45293,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 49
+  },
+  {
+    "id": 4,
+    "gdot_id": "051-5097-0",
+    "name": "Faye Drive over tidal canal",
+    "gdot_name": "FAYE ROAD at MOON RIVER TRIB, 3 MI SE OF VERNONBURG",
+    "description": "Lowest support",
+    "lat": 31.92835,
+    "lng": -81.08402,
+    "elevation": {
+      "elevation": 7.02682,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 67
+  },
+  {
+    "id": 5,
+    "gdot_id": "051-0140-0",
+    "name": "Arthur W. Solomon Bridge 1954 Laroche Ave over Herb Creek",
+    "gdot_name": "LAROACH ROAD at SHIPYARD CREEK, 1 MI E OF SAVANNAH",
+    "description": "Top of support",
+    "lat": 31.993082,
+    "lng": -81.055977,
+    "elevation": {
+      "elevation": 11.51758,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 63
+  },
+  {
+    "id": 6,
+    "gdot_id": "161-0005-0",
+    "name": "US 80 @ Grays Creek",
+    "gdot_name": "US 23 at OCMULGEE RIVER OVERFLOW, 4.6 MI NW OF HAZLEHURST",
+    "description": "Bottom bridge member",
+    "lat": 32.038669,
+    "lng": -81.031204,
+    "elevation": {
+      "elevation": 8.81345,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 56
+  },
+  {
+    "id": 7,
+    "gdot_id": "051-5090-0",
+    "name": "Walthour Bridge",
+    "gdot_name": "CR 148 at BETZ CREEK, 1 MI S OF SR 26 E OF SAV.",
+    "description": "",
+    "lat": 32.018171,
+    "lng": -80.962163,
+    "elevation": {
+      "elevation": 9.0,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 14
+  },
+  {
+    "id": 8,
+    "gdot_id": "051-5015-0",
+    "name": "Catalina Drive & Sazarine Creek",
+    "gdot_name": "CATALINA ROAD at SAZARINE CREEK, 1 MI W OF SAVANNAH BEACH",
+    "description": "Lowest cap",
+    "lat": 32.006419,
+    "lng": -80.866956,
+    "elevation": {
+      "elevation": 7.5286,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 51
+  },
+  {
+    "id": 9,
+    "gdot_id": "051-0067-0",
+    "name": "US 80 @ Chimney Creek",
+    "gdot_name": "Lowest pier",
+    "description": "Lowest pier",
+    "lat": 32.01831,
+    "lng": -80.850964,
+    "elevation": {
+      "elevation": 8.93486,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 54
+  },
+  {
+    "id": 10,
+    "gdot_id": "",
+    "name": "Lazaretto Creek Fishing Pier",
+    "gdot_name": "",
+    "description": "Lowest deck height",
+    "lat": 32.014112,
+    "lng": -80.884092,
+    "elevation": {
+      "elevation": 7.11471,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 53
+  },
+  {
+    "id": 11,
+    "gdot_id": "051-0066-0",
+    "name": "US 80 @ Bull River",
+    "gdot_name": "US 80, SR 26 at LAZERATTO CREEK, 10 MI SE OF SAVANNAH",
+    "description": "Lowest support height",
+    "lat": 32.034717,
+    "lng": -80.959417,
+    "elevation": {
+      "elevation": 8.04397,
+      "unit": "ft",
+      "datum": "NAVD 88"
+    },
+    "sensor_id": 5
+  }
+]

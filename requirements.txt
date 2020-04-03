@@ -1,6 +1,8 @@
-Flask==0.12.4
+Flask==1.1.1
 Flask-Cors==3.0.8
+google-cloud-storage==1.25.0
+gunicorn==19.10.0
+python-dateutil==2.8.0
 requests==2.22.0
 requests-toolbelt==0.9.1
-Werkzeug<0.13.0,>=0.12.0
-python-dateutil==2.8.0
+Werkzeug==0.15.0

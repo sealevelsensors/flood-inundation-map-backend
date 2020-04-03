@@ -1,7 +1,10 @@
 cron:
 - description: "15min sensor measurements job"
-  url: /tasks/sensors
-  schedule: every 15 minutes
-- description: "30min bridge status job"
-  url: /tasks/bridge-status
-  schedule: every 30 minutes
+  url: /_tasks/sensors
+  schedule: every 15 minutes from 00:00 to 23:59
+  target: backend
+- description: "15min bridge status job"
+  url: /_tasks/bridges
+  schedule: every 15 minutes from 00:00 to 23:59
+  target: backend
+
