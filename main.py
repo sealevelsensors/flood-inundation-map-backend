@@ -316,21 +316,21 @@ def _tasks_inundation():
   avgs = avgs[find]
   lon_d = lon_d[find][np.newaxis]
   lat_d = lat_d[find][np.newaxis]
-
+  print(lon_d.shape)
+  print(lat_d.shape)
   xcorr = 0.05
   ycorr = 0.05
   errcomp = 1
-  # field, errmap = helpers.DoOA(lon_d, lat_d, avgs, lon_gr, lat_gr, xcorr, ycorr, errcomp)
-  #
-  # # Plot the map after removing regions of high error
-  # mask = errmap.copy()
-  # mask[:] = np.NaN
-  # mask[errmap < 0.2] = 1
-  #
-  # final_layer = field*mask
+  field, errmap = helpers.DoOA(lon_d, lat_d, avgs, lon_gr, lat_gr, xcorr, ycorr, errcomp)
 
-  return str(avgs.shape)
-  # return(json.dumps(meas))
+  # Plot the map after removing regions of high error
+  mask = errmap.copy()
+  mask[:] = np.NaN
+  mask[errmap < 0.2] = 1
+
+  final_layer = field*mask
+
+  return str(final_layer.shape)
 
 
 if __name__ == "__main__":

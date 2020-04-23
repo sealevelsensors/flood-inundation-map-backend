@@ -145,11 +145,6 @@ def GaussianCovariance(x, x1, y, y1, a, b):
     X1 = M2d(x1, i).T
     Y1 = M2d(y1, i).T
 
-    sio.savemat('X_test.mat', {'arr': X})
-    sio.savemat('X1_test.mat', {'arr': X1})
-    sio.savemat('Y_test.mat', {'arr': Y})
-    sio.savemat('Y1_test.mat', {'arr': Y1})
-
     GaCOV = (((X - X1) * (X - X1)) * (1 / (a * a))) + (((Y - Y1) * (Y - Y1)) * (1 / (b * b)))
     GaCOV = np.exp(-GaCOV)
 
@@ -160,7 +155,8 @@ def GaussianCovariance(x, x1, y, y1, a, b):
 def M2d(x, J):
     I = x.size
     X = np.zeros((I, 1))
-    X[:, 0] = x.flatten(1)
+    print(x)
+    X[:, 0] = x.flatten(order='F')
     X = np.tile(X, (1, J))
 
     #     I=x.size
@@ -202,11 +198,11 @@ def RemoveGlobalMean(lon_d, lat_d, data):
 
 
 def AddGlobalMean(lon_gr, lat_gr, m):
-    Ihat = len(lon_gr.flatten(1))
+    Ihat = len(lon_gr.flatten(order='F'))
     G = 0
     G = np.zeros((Ihat, 3))
-    G[:, 0] = lon_gr.flatten(1)
-    G[:, 1] = lat_gr.flatten(1)
+    G[:, 0] = lon_gr.flatten(order='F')
+    G[:, 1] = lat_gr.flatten(order='F')
     G[:, 2] = 1
 
     mean_gr = G @ m
