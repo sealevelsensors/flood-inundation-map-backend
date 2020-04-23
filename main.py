@@ -284,10 +284,6 @@ def _tasks_inundation():
     lat_d = np.append(lat_d,r[i]["lat"])
     lon_d = np.append(lon_d, r[i]["lng"])
 
-  # reshape to be column array
-  lon_d = lon_d[np.newaxis]
-  lat_d = lat_d[np.newaxis]
-
   # make a mesh grid throughout the sensor network region over which to interpolate the inundation layer
   # redefine xlim & ylim based on sensor network
   delta_space = 0.01  # 0.01deg lat/lon is approximately 1km
@@ -315,7 +311,23 @@ def _tasks_inundation():
     avgs = np.append(avgs, water_levels.mean())
   avgs = avgs[np.newaxis].T
 
+  # filter out NaNs from avgs and apply filter to lat,lon
+  find = np.where(~np.isnan(avgs))[0]
+  avgs = avgs[find]
+  lon_d = lon_d[find][np.newaxis]
+  lat_d = lat_d[find][np.newaxis]
 
+  xcorr = 0.05
+  ycorr = 0.05
+  errcomp = 1
+  # field, errmap = helpers.DoOA(lon_d, lat_d, avgs, lon_gr, lat_gr, xcorr, ycorr, errcomp)
+  #
+  # # Plot the map after removing regions of high error
+  # mask = errmap.copy()
+  # mask[:] = np.NaN
+  # mask[errmap < 0.2] = 1
+  #
+  # final_layer = field*mask
 
   return str(avgs.shape)
   # return(json.dumps(meas))

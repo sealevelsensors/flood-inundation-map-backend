@@ -5,6 +5,7 @@ import json
 import requests
 import time
 
+import numpy as np
 
 def get_sensor_measurements(sensor_id, start_iso, end_iso):
   """
