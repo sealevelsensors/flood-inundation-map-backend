@@ -8,6 +8,8 @@ import os
 import requests
 import time
 
+import numpy as np
+
 import helpers
 
 app = Flask(__name__)
@@ -268,6 +270,55 @@ def _tasks_bridges():
   print('[_tasks_bridges] Finished in ${0}s'.format(time.time() - _start))
 
   return 'Success'
+
+@app.route("/_tasks/inundation/")
+def _tasks_inundation():
+  # get all sensor IDs and [lat,lng] coordinates
+  sensors_url = 'http://backend-dot-perceptive-bay-214919.appspot.com/v1/sensors'
+  r = requests.get(sensors_url).json()
+  sensorIDs = []
+  lat_d = np.array([])
+  lon_d = np.array([])
+  for i in range(len(r)):
+    sensorIDs.append(r[i]["id"])
+    lat_d = np.append(lat_d,r[i]["lat"])
+    lon_d = np.append(lon_d, r[i]["lng"])
+
+  # reshape to be column array
+  lon_d = lon_d[np.newaxis]
+  lat_d = lat_d[np.newaxis]
+
+  # make a mesh grid throughout the sensor network region over which to interpolate the inundation layer
+  # redefine xlim & ylim based on sensor network
+  delta_space = 0.01  # 0.01deg lat/lon is approximately 1km
+  xlim = [-81.24, -80.82]
+  ylim = [31.86, 32.08]
+  num_lat = round((ylim[1] - ylim[0]) / delta_space) + 1
+  num_lon = round((xlim[1] - xlim[0]) / delta_space) + 1
+  lat_gr, lon_gr = np.meshgrid(np.linspace(31.86, 32.08, num_lat), np.linspace(-81.24, -80.82, num_lon))
+
+  # average sensor measurements over a short period of time to use in objective mapping function
+  DELTA_MINUTES = 30
+  # get current datetime in UTC (9 hours ahead of PST), in 24 hour format (11,12,13,14)
+  end_datetime = datetime.datetime.utcnow()
+  start_datetime = end_datetime - datetime.timedelta(minutes=DELTA_MINUTES)
+  # format the datetimes
+  start_iso = start_datetime.strftime('%Y-%m-%dT%H:%M:00Z')
+  end_iso = end_datetime.strftime('%Y-%m-%dT%H:%M:00Z')
+
+  avgs = np.array([])
+  for id in sensorIDs:
+    water_levels = np.array([])
+    meas = helpers.get_sensor_measurements(id, start_iso, end_iso)
+    for i in range(len(meas)):
+      water_levels = np.append(water_levels, meas[i]["water_level"] )
+    avgs = np.append(avgs, water_levels.mean())
+  avgs = avgs[np.newaxis].T
+
+
+
+  return str(avgs.shape)
+  # return(json.dumps(meas))
 
 
 if __name__ == "__main__":
