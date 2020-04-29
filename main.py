@@ -271,18 +271,20 @@ def _tasks_bridges():
 
   return 'Success'
 
+
 @app.route("/_tasks/inundation/")
 def _tasks_inundation():
+  _start = time.time()
+
   # get all sensor IDs and [lat,lng] coordinates
-  sensors_url = 'http://backend-dot-perceptive-bay-214919.appspot.com/v1/sensors'
-  r = requests.get(sensors_url).json()
-  sensorIDs = []
+  sensors = helpers.read_blob('perceptive-bay-214919.appspot.com',
+                              'sensors.json')
+
   lat_d = np.array([])
   lon_d = np.array([])
-  for i in range(len(r)):
-    sensorIDs.append(r[i]["id"])
-    lat_d = np.append(lat_d,r[i]["lat"])
-    lon_d = np.append(lon_d, r[i]["lng"])
+  for i in range(len(sensors)):
+    lat_d = np.append(lat_d, sensors[i]["lat"])
+    lon_d = np.append(lon_d, sensors[i]["lng"])
 
   # make a mesh grid throughout the sensor network region over which to interpolate the inundation layer
   # redefine xlim & ylim based on sensor network
@@ -291,7 +293,8 @@ def _tasks_inundation():
   ylim = [31.86, 32.08]
   num_lat = round((ylim[1] - ylim[0]) / delta_space) + 1
   num_lon = round((xlim[1] - xlim[0]) / delta_space) + 1
-  lat_gr, lon_gr = np.meshgrid(np.linspace(31.86, 32.08, num_lat), np.linspace(-81.24, -80.82, num_lon))
+  lat_gr, lon_gr = np.meshgrid(np.linspace(31.86, 32.08, num_lat),
+                               np.linspace(-81.24, -80.82, num_lon))
 
   # average sensor measurements over a short period of time to use in objective mapping function
   DELTA_MINUTES = 30
@@ -303,11 +306,13 @@ def _tasks_inundation():
   end_iso = end_datetime.strftime('%Y-%m-%dT%H:%M:00Z')
 
   avgs = np.array([])
-  for id in sensorIDs:
+  for sensor in sensors:
+    sensor_id = sensor["id"]
+
     water_levels = np.array([])
-    meas = helpers.get_sensor_measurements(id, start_iso, end_iso)
+    meas = helpers.get_sensor_measurements(sensor_id, start_iso, end_iso)
     for i in range(len(meas)):
-      water_levels = np.append(water_levels, meas[i]["water_level"] )
+      water_levels = np.append(water_levels, meas[i]["water_level"])
     avgs = np.append(avgs, water_levels.mean())
   avgs = avgs[np.newaxis].T
 
@@ -316,21 +321,24 @@ def _tasks_inundation():
   avgs = avgs[find]
   lon_d = lon_d[find][np.newaxis]
   lat_d = lat_d[find][np.newaxis]
-  print(lon_d.shape)
-  print(lat_d.shape)
+  # print(lon_d.shape)
+  # print(lat_d.shape)
   xcorr = 0.05
   ycorr = 0.05
   errcomp = 1
-  field, errmap = helpers.DoOA(lon_d, lat_d, avgs, lon_gr, lat_gr, xcorr, ycorr, errcomp)
+  field, errmap = helpers.DoOA(lon_d, lat_d, avgs, lon_gr, lat_gr, xcorr,
+                               ycorr, errcomp)
 
   # Plot the map after removing regions of high error
   mask = errmap.copy()
   mask[:] = np.NaN
   mask[errmap < 0.2] = 1
 
-  final_layer = field*mask
+  water_level_layer = field * mask
 
-  return str(final_layer.shape)
+  print('[_tasks_inundation] Finished in ${0}s'.format(time.time() - _start))
+
+  return str(water_level_layer.shape)
 
 
 if __name__ == "__main__":
