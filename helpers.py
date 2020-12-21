@@ -95,8 +95,17 @@ def conduct_objective_mapping(sensor_lon, sensor_lat, data, lon_gr, lat_gr, xcor
     over the entire region (lon_gr,lat_gr)
     xcorr and ycorr define the spatial covariance between
     sensor locations and all locations throughout the region
+    
+    sensor_lon: longitude coordinates of sensor locations
+    sensor_lat: latitude coordinates of sensor locations
+    data: data points of sensor location (can be single values representing average over time)
+    lon_gr: grid of longitude values over MxN dimension
+    lat_gr: grid of latitude values over MxN dimension
+    xcorr: x decorrelation length scale (explained further in main.py/_tasks/inundation)
+    ycorr: y decorrelation length scale (explained further in main.py/_tasks/inundation)
+    errcomp: 0 means do not compute error matrix, 1 means compute error matrix
+    :return: field - interpolated field of water level; errmap - error related to each interpolated value
     """
-
     I = len(data[:])
     datasize = I
 
