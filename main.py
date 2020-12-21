@@ -9,7 +9,6 @@ import requests
 import time
 
 import numpy as np
-import pandas as pd
 from scipy.interpolate import RectBivariateSpline
 
 import rasterio
@@ -305,7 +304,7 @@ def _tasks_inundation():
                                                    np.linspace(-81.24, -80.82, lon_grid_length_coarse))
 
     # select a short period of time to use in objective mapping function for "live" updated inundation
-    DELTA_MINUTES = 30
+    DELTA_MINUTES = 15
     # get current datetime in UTC (9 hours ahead of PST), in 24 hour format (11,12,13,14)
     end_datetime = datetime.datetime.utcnow()
     start_datetime = end_datetime - datetime.timedelta(minutes=DELTA_MINUTES)
@@ -319,9 +318,10 @@ def _tasks_inundation():
         sensor_id = sensor["id"]
         water_levels = np.array([])
         sensor_measurements = helpers.get_sensor_measurements(sensor_id, start_iso, end_iso)
-        for i in range(len(sensor_measurements)):
-            water_levels = np.append(water_levels, sensor_measurements[i]["water_level"])
-        avg_water_levels = np.append(avg_water_levels, water_levels.mean())
+        if sensor_measurements:
+            for i in range(len(sensor_measurements)):
+                water_levels = np.append(water_levels, sensor_measurements[i]["water_level"])
+            avg_water_levels = np.append(avg_water_levels, water_levels.mean())
     avg_water_levels = avg_water_levels[np.newaxis].conj().T
 
     # filter out NaNs from avg_water_levels and apply filter to lat,lon
@@ -375,14 +375,11 @@ def _tasks_inundation():
     high_error_mask_fine[errmap_fine < 0.2] = 1
     water_level_layer_fine = water_level_layer_fine_intermediate * high_error_mask_fine
 
-    # file paths to read Chatham County LiDAR DEM 1m Resolution - NEED TO BE CHANGED FOR USE IN BACKEND
 
-    # DEM clippped in ArcGIS to match extent of inundation bounds, defined above
-    lidar_clippedDEM_path = os.getcwd() + '/DEM_1M_2009/DEM_1M_2009_clippedExtent.tif'
-
-    # file path to save inundation layer tiff file
-    end_iso_filename = end_datetime.strftime('%Y-%m-%dT%H')
-    inundation_path = os.getcwd() + '/inundation_layer_' + end_iso_filename + '.tif'
+    # read Chatham County LiDAR DEM 1m res, pre-clippped in ArcGIS to match extent of inundation bounds, defined above
+    # lidar_clippedDEM_path = helpers.read_blob('perceptive-bay-214919.appspot.com',
+    #                     'DEM_1M_2009_clippedExtent.tif')
+    lidar_clippedDEM_path = '/Users/akhil/Documents/GCP/Post-Aug/Inundation/PYTHON/DEM_1M_2009/DEM_1M_2009_clippedExtent.tif'
 
     with rasterio.open(lidar_clippedDEM_path) as dataset:
 
@@ -430,17 +427,18 @@ def _tasks_inundation():
                 if (~np.isnan(inundation_layer_oriented[i][j])):
                     d = {
                         'COORDINATES': [lon_grid_fine[i][j], lat_grid_fine[i][j]],
-                        'INTENSITY': inundation_layer_oriented[i][j] / 10,
+                        'INTENSITY': inundation_layer_oriented[i][j] / 10, # set to max 10ft of inundation
                         'INUNDATION_DEPTH': inundation_layer_oriented[i][j]
                     }
                     seq.append(d)
-        inundation_layer_dict_path = 'inundation_layer_dict_' + end_iso_filename + '.json'
 
-        with open(inundation_layer_dict_path, 'w') as f:
-            json.dump(seq, f)
+        # upload to storage
+        helpers.upload_blob('perceptive-bay-214919.appspot.com', json.dumps(seq),
+                            'inundation.json')
 
     print('[_tasks_inundation] Finished in ${0}s'.format(time.time() - _start))
 
+    return 'success'
 
 
 if __name__ == "__main__":
