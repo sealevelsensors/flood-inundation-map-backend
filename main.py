@@ -376,10 +376,8 @@ def _tasks_inundation():
     water_level_layer_fine = water_level_layer_fine_intermediate * high_error_mask_fine
 
 
-    # read Chatham County LiDAR DEM 1m res, pre-clippped in ArcGIS to match extent of inundation bounds, defined above
-    # lidar_clippedDEM_path = helpers.read_blob('perceptive-bay-214919.appspot.com',
-    #                     'DEM_1M_2009_clippedExtent.tif')
-    lidar_clippedDEM_path = '/Users/akhil/Documents/GCP/Post-Aug/Inundation/PYTHON/DEM_1M_2009/DEM_1M_2009_clippedExtent.tif'
+    # read Chatham County LiDAR DEM 1m res, pre-clippped in ArcGIS to match extent of inundation bounds(defined above)
+    lidar_clippedDEM_path = helpers.read_blob('perceptive-bay-214919.appspot.com', 'DEM_1M_2009_clippedExtent.tif')
 
     with rasterio.open(lidar_clippedDEM_path) as dataset:
 
