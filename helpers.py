@@ -89,45 +89,56 @@ def read_blob(bucket_name, source_blob_name):
   return ret
 
 
-def DoOA(lon_d, lat_d, data, lon_gr, lat_gr, xcorr, ycorr, errcomp):
+def conduct_objective_mapping(sensor_lon, sensor_lat, data, lon_gr, lat_gr, xcorr, ycorr, errcomp):
+    """
+    map water levels (data) measured at each sensor location (sensor_lon,sensor_lat)
+    over the entire region (lon_gr,lat_gr)
+    xcorr and ycorr define the spatial covariance between
+    sensor locations and all locations throughout the region
+    """
+
     I = len(data[:])
     datasize = I
 
     #     compute the spatial mean of the data by fitting a plane mean = a + b*lon + c*lat where
     #     [a,b,c]=m is the vector of the coefficients
-    d, m = RemoveGlobalMean(lon_d, lat_d, data)
 
-    #     Compute Covariance Matrices using Gaussian ofr x and y correlation
+    #     normalize the data by removing the spatial mean and store the mean value
+    d, m = remove_global_mean(sensor_lon, sensor_lat, data)
+
+    #     Compute Covariance Matrices using Gaussian for x and y correlation
     #     Set correlation scale for Covariance Matrix
     a = xcorr
     b = ycorr
 
-    #     Scales are set same as Chereskin et al. JGR Vol. 101 pag. 22,619-22,629, OCT 15,1996
+    #     Scales are set according to Chereskin et al. JGR Vol. 101 pag. 22,619-22,629, OCT 15,1996
 
-    #     Data - Grid Covariance = GD
-    GD = GaussianCovariance(lon_d, lon_gr, lat_d, lat_gr, a, b)
+    #     Grid Covariance = GD
+    GD = get_gaussian_covariance(sensor_lon, lon_gr, sensor_lat, lat_gr, a, b)
 
-    #     Data - Data Covariance = DD
-    DD = GaussianCovariance(lon_d, lon_d, lat_d, lat_d, a, b)
+    #     Data Covariance = DD
+    DD = get_gaussian_covariance(sensor_lon, sensor_lon, sensor_lat, sensor_lat, a, b)
     DD = DD + np.eye(datasize) * 0.01
-    A = np.linalg.lstsq(DD.T, GD)[0].T
+    A = np.linalg.lstsq(DD.conj().T, GD)[0].conj().T
     d_gr = A @ d
 
-    #     Setup bidimensional arrays for plotting
+    #     Set up bidimensional arrays for plotting
     field = d_gr
 
     [I, J] = lon_gr.shape
     field = field.reshape(I, J, order='F')
 
-    #     Add the mean back
-    mean_gr = AddGlobalMean(lon_gr, lat_gr, m)
+    #     utilize the spatial mean calculated by "remove_global_mean" to
+    #     add the mean back to data to represent water level again
+    mean_gr = add_global_mean(lon_gr, lat_gr, m)
     field = field + mean_gr
 
+    #     compute error map of interpolated water levels (if requested by user) using the same gaussian covariane as an error function
     errmap = 0
     if errcomp == 1:
         #     Compute error map
         #     Grid - Grid Covariance = GG
-        GG = GaussianCovariance(lon_gr, lon_gr, lat_gr, lat_gr, a, b)
+        GG = get_gaussian_covariance(lon_gr, lon_gr, lat_gr, lat_gr, a, b)
         E = GG - A @ GD
         dE = np.diag(E)
         errmap = dE.reshape(I, J, order='F')
@@ -135,15 +146,18 @@ def DoOA(lon_d, lat_d, data, lon_gr, lat_gr, xcorr, ycorr, errcomp):
     return field, errmap
 
 
-# Build gaussian covariance
-# exp(- ((x-x1)/a)^2 - ((y-y1)/b)^2)
-def GaussianCovariance(x, x1, y, y1, a, b):
+def get_gaussian_covariance(x, x1, y, y1, a, b):
+    """
+    Build gaussian covariance using the function: exp(- ((x-x1)/a)^2 - ((y-y1)/b)^2)
+    """
     i = x.size
     j = x1.size
-    X = M2d(x, j)
-    Y = M2d(y, j)
-    X1 = M2d(x1, i).T
-    Y1 = M2d(y1, i).T
+
+    # reshape and map the arrays
+    X = map_to_2D(x, j)
+    Y = map_to_2D(y, j)
+    X1 = map_to_2D(x1, i).conj().T
+    Y1 = map_to_2D(y1, i).conj().T
 
     GaCOV = (((X - X1) * (X - X1)) * (1 / (a * a))) + (((Y - Y1) * (Y - Y1)) * (1 / (b * b)))
     GaCOV = np.exp(-GaCOV)
@@ -151,61 +165,69 @@ def GaussianCovariance(x, x1, y, y1, a, b):
     return GaCOV
 
 
-# helper function for Gaussian Covariance
-def M2d(x, J):
+def map_to_2D(x, J):
+    """
+    helper function for Gaussian Covariance
+    flatten array into 1D vector and map over a 2D matrix
+    """
     I = x.size
     X = np.zeros((I, 1))
-    print(x)
     X[:, 0] = x.flatten(order='F')
     X = np.tile(X, (1, J))
 
-    #     I=x.size
-    #     X=np.zeros((I,1))
-    #     X[:]=x[:]
-    #     X=np.tile(X,(1,J))
     return X
 
 
-# normalize the data by removing the mean
-def RemoveGlobalMean(lon_d, lat_d, data):
-    find = np.where(~np.isnan(data))[0]
-    data = data[find]
-    lon_d = lon_d[0][find]
-    lat_d = lat_d[0][find]
+def remove_global_mean(sensor_lon, sensor_lat, data):
+    """
+    compute the spatial mean of the data by fitting a plane mean = a + b*lon + c*lat
+    where [a,b,c] = m is the vector of the coefficients
+    subtract the mean from the data to return a normalized version of the data
+    """
 
-    #     set up G
+    # find and remove NaNs from the data, lat, and lon
+    nan_indices = np.where(~np.isnan(data))[0]
+    data = data[nan_indices]
+    sensor_lon = sensor_lon[0][nan_indices]
+    sensor_lat = sensor_lat[0][nan_indices]
+
+    #     set up G as matrix with lon,lat = [1]
     I = data.size
-    datasize = I
     G = np.zeros((I, 3))
-    G[:, 0] = lon_d[:]
-    G[:, 1] = lat_d[:]
+    G[:, 0] = sensor_lon[:]
+    G[:, 1] = sensor_lat[:]
     G[:, 2] = 1
 
-    #     set up d
+    #     set up d as data matrix
     d = data[:]
 
-    CME = G.T @ G + np.diag([1, 1, 1]) * 0.0001
-    CME.shape
+    # compute spatial mean
+    CME = G.conj().T @ G + np.diag([1, 1, 1]) * 0.0001
 
     A = np.linalg.inv(CME)
-    b = G.T @ d
+    b = G.conj().T @ d
     m = A @ b
     d = G @ m
 
+    # subtract mean from data
     d = data - d
 
     return d, m
 
 
-def AddGlobalMean(lon_gr, lat_gr, m):
+def add_global_mean(lon_gr, lat_gr, m):
+    """
+    add back the spatial mean of the data
+    """
     Ihat = len(lon_gr.flatten(order='F'))
-    G = 0
     G = np.zeros((Ihat, 3))
     G[:, 0] = lon_gr.flatten(order='F')
     G[:, 1] = lat_gr.flatten(order='F')
     G[:, 2] = 1
 
+    #     reshape the mean to the larger grid size
     mean_gr = G @ m
     [I, J] = lon_gr.shape
     mean_gr = mean_gr.reshape(I, J, order='F')
     return mean_gr
+
