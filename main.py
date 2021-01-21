@@ -375,64 +375,44 @@ def _tasks_inundation():
     high_error_mask_fine[errmap_fine < 0.2] = 1
     water_level_layer_fine = water_level_layer_fine_intermediate * high_error_mask_fine
 
+    # LiDAR DEM pre-processed:
+    # clippped in ArcGIS to match extent and resampled to match resolution of fine interpolation bounds, defined above
 
-    # read Chatham County LiDAR DEM 1m res, pre-clippped in ArcGIS to match extent of inundation bounds(defined above)
-    lidar_clippedDEM_path = helpers.read_blob('perceptive-bay-214919.appspot.com', 'DEM_1M_2009_clippedExtent.tif')
+    # open and read from cloud storage
+    dataset = rasterio.open(
+        'https://storage.googleapis.com/perceptive-bay-214919.appspot.com/DEM_1M_2009_clipped_resampled.tif')
+    DEM = dataset.read(1)
 
-    with rasterio.open(lidar_clippedDEM_path) as dataset:
+    # calculating inundation profile and filling NaNs from Water Level layer and DEM
+    water_level_oriented = np.flipud(
+        water_level_layer_fine.conj().T)  # transpose and flip water level layer to match DEM orientation - different packages and file types read lat,lon in different orders
+    inundation_layer = water_level_oriented - DEM  # subtracting DEM from interpolated water level
+    inundation_layer[
+        DEM < -1000] = np.NaN  # DEM "no data" value is -3.4e38, no DEM values should be <-1000 - set inundation layer to NaN at those locations
+    inundation_layer[
+        np.isnan(water_level_oriented)] = np.NaN  # setting inundation layer to NaN where water level layer had NaN
+    inundation_layer[
+        inundation_layer < 0] = np.NaN  # in case there are any negative values left in the the inundation layer, setting those to NaN
 
-        # resample data to target shape
-        data = dataset.read(
-            out_shape=(
-                dataset.count,
-                int(water_level_layer_fine.shape[-1]),
-                int(water_level_layer_fine.shape[-2])
-            ),
-            resampling=Resampling.bilinear
-        )
+    # writing inundation_layer to json
 
-        # resample mask - mask is built into tif file to show which points are "no data" values
-        mask_resampled = dataset.read_masks(
-            out_shape=(
-                dataset.count,
-                int(water_level_layer_fine.shape[-1]),
-                int(water_level_layer_fine.shape[-2])
-            ),
-            resampling=Resampling.bilinear
-        )
+    # orient inundation profile to match orientation of lat and lon arrays - first flip then transpose (opposite of previous orientating)
+    inundation_layer_oriented = np.flipud(inundation_layer.conj()).T
 
-        # calculating inundation profile and filling NaNs from Water Level layer and DEM
+    seq = []
+    for i in range(lon_grid_fine.shape[0]):
+        for j in range(lon_grid_fine.shape[1]):
+            if (~np.isnan(inundation_layer_oriented[i][j])):
+                d = {
+                    'COORDINATES': [lon_grid_fine[i][j], lat_grid_fine[i][j]],
+                    'INTENSITY': inundation_layer_oriented[i][j] / 10, # set to max 10ft of inundation
+                    'INUNDATION_DEPTH': inundation_layer_oriented[i][j]
+                }
+                seq.append(d)
 
-        # transpose and flip water level layer to match DEM orientation - different packages and file types read lat,lon in different orders
-        water_level_oriented = np.flipud(water_level_layer_fine.conj().T)
-        # subtracting DEM from interpolated water level
-        inundation_layer = water_level_oriented - data[0]
-        # using the mask to set the inundation layer to NaN where the DEM had "no data"
-        inundation_layer[mask_resampled[0] == 0] = np.NaN
-        # setting inundation layer to NaN where water level layer had NaN
-        inundation_layer[np.isnan(water_level_oriented)] = np.NaN
-        # in case there are any negative values left in the the inundation layer, setting those to NaN
-        inundation_layer[inundation_layer < 0] = np.NaN
-
-        # writing inundation_layer to json
-
-        # orient inundation profile to match orientation of lat and lon arrays - first flip then transpose (opposite of previous orientation)
-        inundation_layer_oriented = np.flipud(inundation_layer.conj()).T
-
-        seq = []
-        for i in range(lon_grid_fine.shape[0]):
-            for j in range(lon_grid_fine.shape[1]):
-                if (~np.isnan(inundation_layer_oriented[i][j])):
-                    d = {
-                        'COORDINATES': [lon_grid_fine[i][j], lat_grid_fine[i][j]],
-                        'INTENSITY': inundation_layer_oriented[i][j] / 10, # set to max 10ft of inundation
-                        'INUNDATION_DEPTH': inundation_layer_oriented[i][j]
-                    }
-                    seq.append(d)
-
-        # upload to storage
-        helpers.upload_blob('perceptive-bay-214919.appspot.com', json.dumps(seq),
-                            'inundation.json')
+    # upload to storage
+    helpers.upload_blob('perceptive-bay-214919.appspot.com', json.dumps(seq),
+                        'inundation.json')
 
     print('[_tasks_inundation] Finished in ${0}s'.format(time.time() - _start))
 
